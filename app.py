@@ -218,6 +218,87 @@ def build_radar_chart(row):
     return fig
 
 
+def get_max_scores_per_pl():
+    max_scores = {pl: 0 for pl in PL_LABELS}
+    for q_idx in MAPPING:
+        utama, pendukung = MAPPING[q_idx]
+        max_scores[utama] += 2
+        max_scores[pendukung] += 1
+    return max_scores
+
+
+def get_score_dict_from_row(row):
+    return {
+        "PL01": parse_score(row.get("score_pl01")),
+        "PL02": parse_score(row.get("score_pl02")),
+        "PL03": parse_score(row.get("score_pl03")),
+        "PL04": parse_score(row.get("score_pl04")),
+        "PL05": parse_score(row.get("score_pl05")),
+    }
+
+
+def profile_summary(top_pl):
+    summaries = {
+        "PL01": "Cenderung kuat di perancangan dan pembangunan solusi sistem secara teknis.",
+        "PL02": "Cenderung kuat di evaluasi kontrol, audit, ketelitian, dan rekomendasi perbaikan.",
+        "PL03": "Cenderung kuat di pengolahan data, analitik, dan penyajian insight berbasis data.",
+        "PL04": "Cenderung kuat sebagai penghubung kebutuhan bisnis ke spesifikasi teknis sistem.",
+        "PL05": "Cenderung kuat pada proses bisnis terintegrasi dan solusi ERP lintas fungsi.",
+    }
+    return summaries.get(top_pl, "Profil kompetensi belum terdeteksi dengan jelas.")
+
+
+def persistence_tips(top_pl):
+    tips = {
+        "PL01": [
+            "Bangun 1 proyek aplikasi nyata setiap semester sebagai bukti kompetensi.",
+            "Konsisten latihan desain arsitektur sederhana dan code review mingguan.",
+            "Pilih topik tugas akhir yang langsung terkait pengembangan sistem.",
+        ],
+        "PL02": [
+            "Latih kebiasaan audit mini pada proyek kampus: kontrol, risiko, dan temuan.",
+            "Perkuat dokumentasi temuan agar argumentasi rekomendasi lebih tajam.",
+            "Ambil studi kasus audit TI untuk portofolio tugas akhir.",
+        ],
+        "PL03": [
+            "Targetkan 1 mini project analitik atau dashboard setiap semester.",
+            "Latih alur end-to-end: data cleaning, analisis, visualisasi, dan narasi hasil.",
+            "Perkuat statistik terapan agar model analitik lebih akurat.",
+        ],
+        "PL04": [
+            "Biasakan menulis dokumen kebutuhan dan user story pada tiap proyek tim.",
+            "Latih fasilitasi diskusi antara user dan tim teknis untuk validasi requirement.",
+            "Fokuskan tugas akhir pada analisis kebutuhan dan desain solusi sistem.",
+        ],
+        "PL05": [
+            "Perdalam pemodelan proses bisnis lintas divisi dan integrasi data.",
+            "Latih skenario implementasi ERP kecil beserta rencana pengujian.",
+            "Bangun portofolio studi kasus optimasi proses berbasis ERP.",
+        ],
+    }
+    return tips.get(top_pl, [])
+
+
+def on_time_graduation_tips():
+    return [
+        "Susun peta semester sampai lulus: mata kuliah wajib, prasyarat, magang, dan tugas akhir.",
+        "Kunci ritme mingguan 2-3 jam per hari untuk progres akademik dan proyek portofolio.",
+        "Tetapkan target IP per semester dan lakukan evaluasi bulanan dengan dosen wali.",
+        "Mulai topik tugas akhir maksimal 2 semester sebelum target lulus.",
+        "Gunakan indikator peringatan dini: nilai turun, tugas menumpuk, atau progres TA stagnan >2 minggu.",
+    ]
+
+
+def development_focus_areas(score_dict, max_scores):
+    weak = []
+    for pl, score in score_dict.items():
+        max_score = max_scores.get(pl, 1)
+        ratio = (score / max_score) if max_score else 0
+        if ratio < 0.45:
+            weak.append(pl)
+    return weak
+
+
 st.title("📊 Kuesioner Pemetaan Profesi Lulusan (PL) SI")
 st.caption("Jawab Ya/Tidak, sistem menghitung skor otomatis dan menyimpan data mahasiswa ke CSV.")
 
@@ -332,3 +413,31 @@ else:
 
     fig = build_radar_chart(selected_row)
     st.pyplot(fig)
+
+    score_dict = get_score_dict_from_row(selected_row)
+    ranked = sorted(score_dict.items(), key=lambda item: item[1], reverse=True)
+    top_pl = ranked[0][0]
+    second_pl = ranked[1][0]
+    max_scores = get_max_scores_per_pl()
+    weak_areas = development_focus_areas(score_dict, max_scores)
+
+    st.markdown("#### Detail Interpretasi Mahasiswa")
+    st.write(f"Profil dominan: {top_pl} - {PL_LABELS[top_pl]}")
+    st.write(f"Profil pendukung: {second_pl} - {PL_LABELS[second_pl]}")
+    st.write(profile_summary(top_pl))
+
+    st.markdown("#### Cara Bertahan Pada Pilihan Profesi")
+    for item in persistence_tips(top_pl):
+        st.write(f"- {item}")
+
+    st.markdown("#### Fokus Penguatan")
+    if weak_areas:
+        weak_text = ", ".join([f"{pl} ({PL_LABELS[pl]})" for pl in weak_areas])
+        st.write(f"Area yang masih perlu diperkuat: {weak_text}.")
+        st.write("Strategi: ambil proyek/magang yang sengaja melatih area lemah agar profil kompetensi lebih seimbang.")
+    else:
+        st.write("Tidak ada area lemah yang menonjol. Pertahankan konsistensi latihan dan dokumentasi portofolio.")
+
+    st.markdown("#### Strategi Lulus Tepat Waktu")
+    for tip in on_time_graduation_tips():
+        st.write(f"- {tip}")
