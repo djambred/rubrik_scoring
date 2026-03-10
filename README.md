@@ -20,6 +20,7 @@ Catatan KNN:
 - Jika data belum cukup, aplikasi otomatis fallback ke Rule-Based Matrix.
 
 ## Instruksi
+- Isi identitas hanya dengan **Nama** dan **NIM**.
 - Jawab setiap pertanyaan dengan **Ya** atau **Tidak** sesuai kondisi diri saat ini.
 - Tidak ada jawaban benar/salah.
 - Hasil menunjukkan **kecenderungan** profesi, bukan keputusan final.

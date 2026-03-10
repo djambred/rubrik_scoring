@@ -53,6 +53,7 @@ MAPPING = {
 }
 
 OUTPUT_CSV = os.path.join(os.path.dirname(__file__), "hasil_kuisioner_pl.csv")
+IDENTITY_FIELDS = ["nim", "nama"]
 
 
 def answer_to_numeric(answer):
@@ -134,10 +135,7 @@ def ensure_csv_header(path):
 
     headers = [
         "timestamp",
-        "nim",
-        "nama",
-        "kelas",
-        "angkatan",
+        *IDENTITY_FIELDS,
     ]
     headers.extend([f"q{i}" for i in range(1, 16)])
     headers.extend([f"score_{pl.lower()}" for pl in PL_LABELS])
@@ -148,29 +146,45 @@ def ensure_csv_header(path):
         writer.writerow(headers)
 
 
-def append_result(path, identity, answers, scores, top_two):
-    row = [
-        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        identity["nim"],
-        identity["nama"],
-        identity["kelas"],
-        identity["angkatan"],
-    ]
-    row.extend([answers[i] for i in range(1, 16)])
-    row.extend([scores[pl] for pl in PL_LABELS])
+def get_csv_headers(path):
+    if not os.path.exists(path):
+        return [
+            "timestamp",
+            *IDENTITY_FIELDS,
+            *[f"q{i}" for i in range(1, 16)],
+            *[f"score_{pl.lower()}" for pl in PL_LABELS],
+            "top1_pl",
+            "top1_profesi",
+            "top2_pl",
+            "top2_profesi",
+        ]
 
+    with open(path, "r", newline="", encoding="utf-8") as f:
+        reader = csv.reader(f)
+        return next(reader, [])
+
+
+def append_result(path, identity, answers, scores, top_two):
     top1_pl, _ = top_two[0]
     top2_pl, _ = top_two[1]
-    row.extend([
-        top1_pl,
-        PL_LABELS[top1_pl],
-        top2_pl,
-        PL_LABELS[top2_pl],
-    ])
+
+    row = {
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "nim": identity["nim"],
+        "nama": identity["nama"],
+        **{f"q{i}": answers[i] for i in range(1, 16)},
+        **{f"score_{pl.lower()}": scores[pl] for pl in PL_LABELS},
+        "top1_pl": top1_pl,
+        "top1_profesi": PL_LABELS[top1_pl],
+        "top2_pl": top2_pl,
+        "top2_profesi": PL_LABELS[top2_pl],
+    }
+
+    headers = get_csv_headers(path)
 
     with open(path, "a", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f)
-        writer.writerow(row)
+        writer = csv.DictWriter(f, fieldnames=headers, extrasaction="ignore")
+        writer.writerow({header: row.get(header, "") for header in headers})
 
 
 def load_saved_results(path):
@@ -304,15 +318,11 @@ st.caption("Jawab Ya/Tidak, sistem menghitung skor otomatis dan menyimpan data m
 
 with st.form("form_kuesioner_pl"):
     st.subheader("Identitas Mahasiswa")
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2 = st.columns(2)
     with col1:
         nim = st.text_input("NIM *")
     with col2:
         nama = st.text_input("Nama Lengkap *")
-    with col3:
-        kelas = st.text_input("Kelas")
-    with col4:
-        angkatan = st.text_input("Angkatan")
 
     st.subheader("Pertanyaan")
     method = st.selectbox(
@@ -338,8 +348,6 @@ if submitted:
     identity = {
         "nim": nim.strip(),
         "nama": nama.strip(),
-        "kelas": kelas.strip(),
-        "angkatan": angkatan.strip(),
     }
 
     if not identity["nim"] or not identity["nama"]:
