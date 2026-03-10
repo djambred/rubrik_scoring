@@ -3,6 +3,22 @@
 ## Tujuan
 Kuesioner ini membantu memetakan kecenderungan profesi lulusan Program Studi Sistem Informasi (SI) berdasarkan jawaban **Ya/Tidak**.
 
+Pertanyaan telah diselaraskan dengan kompetensi inti SKKNI level 6 untuk 5 Profil Lulusan (PL):
+- PL01: Information System Developer
+- PL02: IT Consultan
+- PL03: Data Spesialist
+- PL04: Business & System Analyst
+- PL05: Entrepreneurship Resource Planning Architect
+
+## Metode Pemetaan
+Tersedia 2 mode pemetaan di aplikasi:
+- Rule-Based Matrix: skoring PL utama +2 dan PL pendukung +1.
+- KNN (berbasis data historis): klasifikasi menggunakan data jawaban terdahulu yang memiliki label `top1_pl` valid.
+
+Catatan KNN:
+- Membutuhkan data training historis yang cukup dan konsisten (kolom `q1..q15` dan `top1_pl`).
+- Jika data belum cukup, aplikasi otomatis fallback ke Rule-Based Matrix.
+
 ## Instruksi
 - Jawab setiap pertanyaan dengan **Ya** atau **Tidak** sesuai kondisi diri saat ini.
 - Tidak ada jawaban benar/salah.
