@@ -77,8 +77,6 @@ def ensure_csv_header(path):
         "timestamp",
         "nim",
         "nama",
-        "kelas",
-        "angkatan",
     ]
     headers.extend([f"q{i}" for i in range(1, 16)])
     headers.extend([f"score_{pl.lower()}" for pl in PL_LABELS])
@@ -94,8 +92,6 @@ def append_result(path, identity, answers, scores, top_two):
         datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         identity["nim"],
         identity["nama"],
-        identity["kelas"],
-        identity["angkatan"],
     ]
     row.extend([answers[i] for i in range(1, 16)])
     row.extend([scores[pl] for pl in PL_LABELS])
@@ -122,10 +118,8 @@ with st.form("form_kuesioner_pl"):
     col1, col2 = st.columns(2)
     with col1:
         nim = st.text_input("NIM *")
-        nama = st.text_input("Nama Lengkap *")
     with col2:
-        kelas = st.text_input("Kelas")
-        angkatan = st.text_input("Angkatan")
+        nama = st.text_input("Nama Lengkap *")
 
     st.subheader("Pertanyaan")
     answers = {}
@@ -144,8 +138,6 @@ if submitted:
     identity = {
         "nim": nim.strip(),
         "nama": nama.strip(),
-        "kelas": kelas.strip(),
-        "angkatan": angkatan.strip(),
     }
 
     if not identity["nim"] or not identity["nama"]:
@@ -178,7 +170,5 @@ if submitted:
         st.caption(f"File tersimpan: {OUTPUT_CSV}")
 
 st.divider()
-st.markdown("#### Aturan Skor")
-st.markdown("- Jawaban **Ya** pada PL Utama: +2")
-st.markdown("- Jawaban **Ya** pada PL Pendukung: +1")
-st.markdown("- Jawaban **Tidak**: +0")
+st.markdown("### Tentang Aplikasi")
+st.markdown("Aplikasi ini digunakan untuk memetakan profesi lulusan berdasarkan jawaban kuesioner. Sistem menghitung skor otomatis dan menyimpan data mahasiswa ke CSV.")
