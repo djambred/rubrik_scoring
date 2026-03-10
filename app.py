@@ -2,6 +2,7 @@ import csv
 import os
 from datetime import datetime
 
+import matplotlib.pyplot as plt
 import streamlit as st
 from sklearn.neighbors import KNeighborsClassifier
 
@@ -172,6 +173,51 @@ def append_result(path, identity, answers, scores, top_two):
         writer.writerow(row)
 
 
+def load_saved_results(path):
+    if not os.path.exists(path):
+        return []
+
+    with open(path, "r", newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        return list(reader)
+
+
+def parse_score(value):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def build_radar_chart(row):
+    labels = list(PL_LABELS.keys())
+    values = [
+        parse_score(row.get("score_pl01")),
+        parse_score(row.get("score_pl02")),
+        parse_score(row.get("score_pl03")),
+        parse_score(row.get("score_pl04")),
+        parse_score(row.get("score_pl05")),
+    ]
+
+    labels_closed = labels + [labels[0]]
+    values_closed = values + [values[0]]
+
+    angles = [n / float(len(labels_closed)) * 2 * 3.141592653589793 for n in range(len(labels_closed))]
+
+    fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
+    ax.plot(angles, values_closed, linewidth=2)
+    ax.fill(angles, values_closed, alpha=0.25)
+    ax.set_xticks(angles[:-1])
+    ax.set_xticklabels(labels)
+
+    max_score = max(values) if values else 1
+    upper = max(2, int(max_score + 1))
+    ax.set_ylim(0, upper)
+    ax.set_yticks(range(0, upper + 1, max(1, upper // 5)))
+    ax.set_title("Radar Chart Pemetaan PL", pad=16)
+    return fig
+
+
 st.title("📊 Kuesioner Pemetaan Profesi Lulusan (PL) SI")
 st.caption("Jawab Ya/Tidak, sistem menghitung skor otomatis dan menyimpan data mahasiswa ke CSV.")
 
@@ -263,3 +309,26 @@ if submitted:
 st.divider()
 st.markdown("### Tentang Aplikasi")
 st.markdown("Aplikasi ini digunakan untuk memetakan profesi lulusan berdasarkan jawaban kuesioner. Sistem menghitung skor otomatis dan menyimpan data mahasiswa ke CSV.")
+
+st.divider()
+st.markdown("### Dashboard Radar Chart")
+
+saved_rows = load_saved_results(OUTPUT_CSV)
+if not saved_rows:
+    st.info("Belum ada data pengisian. Silakan isi kuesioner terlebih dahulu.")
+else:
+    options = []
+    for idx, row in enumerate(saved_rows):
+        label = f"{row.get('nim', '-')} - {row.get('nama', '-')} ({row.get('timestamp', '-')})"
+        options.append((label, idx))
+
+    selected_label = st.selectbox(
+        "Pilih responden",
+        options=[item[0] for item in options],
+        index=len(options) - 1,
+    )
+    selected_idx = next(item[1] for item in options if item[0] == selected_label)
+    selected_row = saved_rows[selected_idx]
+
+    fig = build_radar_chart(selected_row)
+    st.pyplot(fig)
